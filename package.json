@@ -1,0 +1,26 @@
+{
+  "name": "ffos-fs",
+  "version": "0.0.1",
+  "description": "fs module for the Firefox OS",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/der-On/ffos-fs.git"
+  },
+  "keywords": [
+    "Firefox",
+    "OS",
+    "ffos",
+    "fs",
+    "file"
+  ],
+  "author": "Ondrej Brinkel <info@anzui.de>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/der-On/ffos-fs/issues"
+  },
+  "homepage": "https://github.com/der-On/ffos-fs"
+}
