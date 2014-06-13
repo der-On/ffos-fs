@@ -1,7 +1,15 @@
 module.exports = new (function() {
-  if (!navigator || typeof navigator.getDeviceStorage !== 'function') {
-    console.warn('Your Browser does not support device storage.');
+  function hasDeviceStorage()
+  {
+    if (!navigator || typeof navigator.getDeviceStorage !== 'function') {
+      console.warn('Your Browser does not support device storage.');
+      return false;
+    }
+
+    return true;
   }
+
+  hasDeviceStorage();
 
   var self = this;
 
@@ -29,6 +37,10 @@ module.exports = new (function() {
 
   function getStorage(type)
   {
+    if (!hasDeviceStorage()) {
+      return null;
+    };
+
     return navigator.getDeviceStorage(type);
   }
 
