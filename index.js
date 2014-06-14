@@ -105,6 +105,10 @@ module.exports = new (function() {
 
   this.open = function(path, flags, callback)
   {
+    if (typeof callback !== 'function') {
+      var callback = function() {};
+    }
+
     path = path.trim();
     var storage = getStorageForPath(path);
 
@@ -137,6 +141,10 @@ module.exports = new (function() {
 
   this.exists = function(path, callback)
   {
+    if (typeof callback !== 'function') {
+      var callback = function() {};
+    }
+
     this.open(path, 'r', function(error, file) {
       callback(null, (error) ? false : true);
     });
@@ -144,6 +152,10 @@ module.exports = new (function() {
 
   this.read = function(fd, blob, offset, length, position, callback)
   {
+    if (typeof callback !== 'function') {
+      var callback = function() {};
+    }
+
     if (!fd) {
       throw new Error('Missing File.');
       return;
@@ -182,6 +194,10 @@ module.exports = new (function() {
     var filename = args.shift();
     var callback = args.pop();
     var opts = args.pop() || {};
+
+    if (typeof callback !== 'function') {
+      var callback = function() {};
+    }
 
     var options = {
       encoding: opts.encoding || null,
@@ -237,6 +253,10 @@ module.exports = new (function() {
 
   this.write = function(fd, buffer, offset, length, position, callback)
   {
+    if (typeof callback !== 'function') {
+      var callback = function() {};
+    }
+
     if (!fd) {
       throw new Error('Missing File.');
       return;
@@ -291,6 +311,10 @@ module.exports = new (function() {
       flag: opts.flag || 'w'
     };
 
+    if (typeof callback !== 'function') {
+      var callback = function() {};
+    }
+
     this.exists(filename, function(error, exists) {
       if (error) {
         callback(error);
@@ -321,6 +345,9 @@ module.exports = new (function() {
 
   this.readdir = function(path, callback)
   {
+    if (typeof callback !== 'function') {
+      var callback = function() {};
+    }
     var storage = getStorageForPath(path);
     if (!storage) {
       callback(new Error('Unable to find entry point for ' + path + '.'));
@@ -346,5 +373,28 @@ module.exports = new (function() {
     {
       callback(this.error, files);
     }
+  };
+
+  this.unlink = function(path, callback)
+  {
+    if (typeof callback !== 'function') {
+      var callback = function() {};
+    }
+    var filepath = getPathWithoutStorageType(path);
+    var storage = getStorageForPath(path);
+    if (!storage) {
+      callback(new Error('Unable to find entry point for ' + path + '.'));
+      return;
+    }
+
+    var request = storage.delete(filepath);
+    request.onsuccess = function()
+    {
+      callback(null);
+    };
+    request.onerror = function()
+    {
+      callback(this.error);
+    };
   };
 })();

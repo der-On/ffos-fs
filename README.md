@@ -57,6 +57,12 @@ You cannot check for the existance of a directory on Firefox OS.
 fs.exists(path, callback(error, exists) { ... });
 ```
 
+**Remove a file or directory.**
+
+```javascript
+fs.unlink(path, callback(error) { ... });
+```
+
 ----------------------------
 
 ### Lower level functions
