@@ -29,7 +29,8 @@ fs.readdir(path, callback(error, files) { ... });
 
 **options**
 
-- _encoding_ ```String | Null``` default = null, can be 'utf8' or 'binary'
+- _format_ ```String | Null``` default = 'text', can be 'text', 'binary', 'dataURL', 'buffer'
+- _encoding_ ```String | Null``` default = null, text encoding if _format_ is 'text'
 - _flag_ ```String``` default = 'r', can be 'r' or 'w'
 
 ```javascript
@@ -46,7 +47,7 @@ Will create the file if it does not exist and overwrite an existing file.
 - _flag_ ```String``` default = 'w'
 
 ```javascript
-fs.readFile(path, data, [options], callback(error) { ... });
+fs.writeFile(path, data, [options], callback(error) { ... });
 ```
 
 **Check if a file exists.**   

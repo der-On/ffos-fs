@@ -185,6 +185,7 @@ module.exports = new (function() {
 
     var options = {
       encoding: opts.encoding || null,
+      format: opts.format || 'text',
       flag: opts.flag || 'r'
     };
 
@@ -210,15 +211,25 @@ module.exports = new (function() {
           callback(null, reader.result);
         });
 
-        switch(options.encoding) {
+        switch(options.format) {
           case null:
+          case 'text':
+            reader.readAsText(fd, options.encoding);
+            break;
           case 'binary':
-            reader.readAsBinaryString(fd.slice());
+            reader.readAsBinaryString(fd);
             break;
 
-          case 'utf8':
-            reader.readAsText(fd.slice());
+          case 'dataURL':
+            reader.readAsDataURL(fd);
             break;
+
+          case 'buffer':
+            reader.readAsArrayBuffer(fd);
+            break;
+
+          default:
+            reader.readAsText(fd, options.encoding);
         }
       });
     });
@@ -286,37 +297,25 @@ module.exports = new (function() {
         return;
       }
 
-      if (exists) {
-        self.open(filename, options.flag, function(error, fd) {
-          if (error) {
-            callback(error);
-            return;
-          }
+      var storage = getStorageForPath(filename);
 
-          self.write(fd, data, 0, null, 0, callback);
-        });
+      if (!storage) {
+        callback(new Error('Unable to find entry point for ' + filename + '.'));
+        return;
       }
-      else {
-        var storage = getStorageForPath(filename);
 
-        if (!storage) {
-          callback(new Error('Unable to find entry point for ' + filename + '.'));
-          return;
-        }
+      var file = (data instanceof Blob) ? data : new Blob([data], { type: options.mimetype });
+      var filepath = getPathWithoutStorageType(filename);
 
-        var file = new Blob([data], { type: options.mimetype });
-        var filepath = getPathWithoutStorageType(filename);
-
-        var request = storage.addNamed(file, filepath);
-        request.onsuccess = function()
-        {
-          callback(null);
-        };
-        request.onerror = function()
-        {
-          callback(this.error);
-        };
-      }
+      var request = storage.addNamed(file, filepath);
+      request.onsuccess = function()
+      {
+        callback(null);
+      };
+      request.onerror = function()
+      {
+        callback(this.error);
+      };
     });
   };
 
