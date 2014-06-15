@@ -200,7 +200,7 @@ module.exports = new (function() {
     }
 
     var options = {
-      encoding: opts.encoding || null,
+      encoding: opts.encoding || 'utf8',
       format: opts.format || 'text',
       flag: opts.flag || 'r'
     };
