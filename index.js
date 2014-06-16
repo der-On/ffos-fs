@@ -219,7 +219,7 @@ module.exports = new (function() {
 
         var reader = new FileReader();
 
-        reader.onerror = function()
+        reader.onerror = function(error)
         {
           callback(error);
         };
