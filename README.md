@@ -112,4 +112,25 @@ If ```position``` is ```null```, data will be read from the start.
 fs.read(fd, blob, offset, length, position, callback(error, bytesRead, blob) { ... });
 ```
 
+--------------------
+
+### Mocking the filesystem
+
+It's possible to mock the filesystem to an in-memory filesystem.
+
+```javascript
+fs.mock();
+```
+
+Currently there is no support for the Lower level functions in mock mode.
+
+You can however use:
+
+- fs.writeFile
+- fs.exists
+- fs.readFile
+- fs.readdir
+- fs.unlink
+
+If you need to prepopulate your mocked filesystem with files just use ```fs.writeFile``` to create some files.
 
