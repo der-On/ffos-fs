@@ -1,3 +1,5 @@
+var mock = require('./mock');
+
 module.exports = new (function() {
   function hasDeviceStorage()
   {
@@ -109,8 +111,8 @@ module.exports = new (function() {
    */
   this.mock = function()
   {
+    mock();
     mocked = true;
-    require('./mock')();
     console.warn('Using in memory mock for filesystem now.');
   };
 
@@ -236,41 +238,41 @@ module.exports = new (function() {
       }
 
       var file = storage.files[filename] || null;
-
+      var data = null;
       if (file) {
         switch(options.format) {
           case 'text':
-            file = file.toString();
+            data = file.data.toString();
             break;
 
           case 'binary':
-            file = file.toString();
+            data = file.data.toString();
             break;
 
           case 'dataURL':
             if (typeof file === 'string') {
-              var buffer = new ArrayBuffer(file.length);
-              for (var i = 0; i < file.length; i++) {
-                buffer[i] = file.charCodeAt(i);
+              var buffer = new ArrayBuffer(file.data.length);
+              for (var i = 0; i < file.data.length; i++) {
+                buffer[i] = file.data.charCodeAt(i);
               }
-              file = buffer.toDataURL();
+              data = buffer.toDataURL();
             }
 
           case 'buffer':
             if (typeof file === 'string') {
-              var buffer = new ArrayBuffer(file.length);
-              for (var i = 0; i < file.length; i++) {
-                buffer[i] = file.charCodeAt(i);
+              var buffer = new ArrayBuffer(file.data.length);
+              for (var i = 0; i < file.data.length; i++) {
+                buffer[i] = file.data.charCodeAt(i);
               }
-              file = buffer;
+              data = buffer;
             }
 
           default:
-            file = file.toString();
+            data = file.data.toString();
         }
       }
 
-      callback(null, file);
+      callback(null, data);
       return;
     }
 
@@ -398,7 +400,7 @@ module.exports = new (function() {
       }
 
       if (mocked) {
-        storage.files[filename] = data;
+        storage.files[filename] = new mock.FileMock(filename, data);
         callback(null);
         return;
       }
