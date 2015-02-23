@@ -1,16 +1,49 @@
 "use strict";
 
-var FileMock = function(filename, data)
+var FileMock = function(filename, type, data)
 {
-  this.name = filename;
+  var self = this;
+  this.name = filename.split(':', 2)[1];
   this.lastModifiedDate = new Date();
   this.size = 0;
-  this.type = 'text/unkown';
+  this.type = 'text/plain';
   this.data = data;
-  this.blob = new Blob(Array.prototype.slice.call(data), {
+  this.blob = new Blob([data], {
     type: this.type
   });
+  this.buffer = getArrayBuffer();
+
   this.slice = this.blob.slice.bind(this.blob);
+
+  this.toText = function()
+  {
+    return this.data.toString();
+  };
+
+  this.toBinaryString = function()
+  {
+    return this.data.toString();
+  };
+
+  this.toDataURL = function()
+  {
+    return this.data.toString();
+  };
+
+  this.toArrayBuffer = function()
+  {
+    return this.buffer;
+  };
+
+  function getArrayBuffer()
+  {
+    var buffer = new ArrayBuffer(self.data.length);
+    for(var i = 0; i < self.data.length; i++) {
+      buffer[i] = self.data[i];
+    }
+
+    return buffer;
+  }
 };
 
 var Storage = function(type)

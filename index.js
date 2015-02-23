@@ -63,7 +63,7 @@ module.exports = new (function() {
     }
     else if(fd instanceof File)
     {
-      self.open(fd.name, 'w', callback);
+      self.open(fd.fullname || fd.name, 'w', callback);
       return;
     }
     else if (fd instanceof FileHandle)
@@ -159,13 +159,7 @@ module.exports = new (function() {
     }
 
     if (mocked) {
-      var storage = getStorageForPath(path);
-      if (storage) {
-        callback(null, (storage.files[path]) ? true : false);
-      }
-      else {
-        callback(new Error('Unable to find entry point for ' + path + '.'));
-      }
+      existsMock(path, callback);
       return;
     }
 
@@ -173,6 +167,17 @@ module.exports = new (function() {
       callback(null, (error) ? false : true);
     });
   };
+
+  function existsMock(path, callback)
+  {
+    var storage = getStorageForPath(path);
+    if (storage) {
+      callback(null, (storage.files[path]) ? true : false);
+    }
+    else {
+      callback(new Error('Unable to find entry point for ' + path + '.'));
+    }
+  }
 
   this.read = function(fd, blob, offset, length, position, callback)
   {
@@ -230,49 +235,7 @@ module.exports = new (function() {
     };
 
     if (mocked) {
-      var storage = getStorageForPath(filename);
-
-      if (!storage) {
-        callback(new Error('Unable to find entry point for ' + filename + '.'));
-        return;
-      }
-
-      var file = storage.files[filename] || null;
-      var data = null;
-      if (file) {
-        switch(options.format) {
-          case 'text':
-            data = file.data.toString();
-            break;
-
-          case 'binary':
-            data = file.data.toString();
-            break;
-
-          case 'dataURL':
-            if (typeof file === 'string') {
-              var buffer = new ArrayBuffer(file.data.length);
-              for (var i = 0; i < file.data.length; i++) {
-                buffer[i] = file.data.charCodeAt(i);
-              }
-              data = buffer.toDataURL();
-            }
-
-          case 'buffer':
-            if (typeof file === 'string') {
-              var buffer = new ArrayBuffer(file.data.length);
-              for (var i = 0; i < file.data.length; i++) {
-                buffer[i] = file.data.charCodeAt(i);
-              }
-              data = buffer;
-            }
-
-          default:
-            data = file.data.toString();
-        }
-      }
-
-      callback(null, data);
+      readFileMock(filename, options, callback);
       return;
     }
 
@@ -322,6 +285,43 @@ module.exports = new (function() {
     });
   };
 
+  function readFileMock(filename, options, callback)
+  {
+    var storage = getStorageForPath(filename);
+
+    if (!storage) {
+      callback(new Error('Unable to find entry point for ' + filename + '.'));
+      return;
+    }
+
+    var file = storage.files[filename] || null;
+    var data = null;
+    if (file) {
+      switch(options.format) {
+        case 'text':
+          data = file.toText();
+          break;
+
+        case 'binary':
+          data = file.toBinaryString();
+          break;
+
+        case 'dataURL':
+          data = file.toDataURL();
+          break;
+
+        case 'buffer':
+          data = file.toArrayBuffer();
+          break;
+
+        default:
+          data = file.toText();
+      }
+    }
+
+    callback(null, data);
+  }
+
   this.write = function(fd, buffer, offset, length, position, callback)
   {
     if (typeof callback !== 'function') {
@@ -332,7 +332,8 @@ module.exports = new (function() {
       throw new Error('Missing File.');
       return;
     }
-    if (!buffer || !(buffer instanceof ArrayBuffer) || typeof buffer !== 'string') {
+
+    if (!buffer || (!(buffer instanceof ArrayBuffer) && typeof buffer !== 'string')) {
       throw new Error('Missing or invalid Buffer.');
       return;
     }
@@ -344,8 +345,8 @@ module.exports = new (function() {
       }
 
       var offset = offset || 0;
-      var length = length || buffer.lenght;
-      if (length > buffer.lenght) {
+      var length = length || buffer.length;
+      if (length > buffer.length) {
         length = buffer.length;
       }
       var position = position || 0;
@@ -392,6 +393,11 @@ module.exports = new (function() {
         return;
       }
 
+      if (mocked) {
+        writeFileMock(filename, data, options, callback);
+        return;
+      }
+
       var storage = getStorageForPath(filename);
 
       if (!storage) {
@@ -399,26 +405,58 @@ module.exports = new (function() {
         return;
       }
 
-      if (mocked) {
-        storage.files[filename] = new mock.FileMock(filename, data);
-        callback(null);
-        return;
+      // get existing file for writing
+      if (exists) {
+        self.open(filename, options, function(err, fd) {
+          if (err) {
+            callback(err);
+            return;
+          }
+
+          // TODO: convert blob data to ArrayBuffer here?
+          var buffer = data;
+          fd.fullname = filename;
+
+          self.write(fd, buffer, 0, buffer.length, 0, function(err) {
+            if (err) {
+              callback(err);
+              return;
+            }
+
+            callback(null);
+          });
+        });
       }
+      // create new file
+      else {
+        var file = (data instanceof Blob) ? data : new Blob([data], { type: options.mimetype });
+        var filepath = getPathWithoutStorageType(filename);
 
-      var file = (data instanceof Blob) ? data : new Blob([data], { type: options.mimetype });
-      var filepath = getPathWithoutStorageType(filename);
-
-      var request = storage.addNamed(file, filepath);
-      request.onsuccess = function()
-      {
-        callback(null);
-      };
-      request.onerror = function()
-      {
-        callback(this.error);
-      };
+        var request = storage.addNamed(file, filepath);
+        request.onsuccess = function()
+        {
+          callback(null);
+        };
+        request.onerror = function()
+        {
+          callback(this.error);
+        };
+      }
     });
   };
+
+  function writeFileMock(filename, data, options, callback)
+  {
+    var storage = getStorageForPath(filename);
+
+    if (!storage) {
+      callback(new Error('Unable to find entry point for ' + filename + '.'));
+      return;
+    }
+
+    storage.files[filename] = new mock.FileMock(filename, options.mimetype, data);
+    callback(null);
+  }
 
   this.readdir = function(path, callback)
   {
