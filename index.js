@@ -164,7 +164,7 @@ module.exports = new (function() {
     }
 
     this.open(path, 'r', function(error, file) {
-      callback(null, (error) ? false : true);
+      callback(null, (error || !file) ? false : true);
     });
   };
 
@@ -509,8 +509,7 @@ module.exports = new (function() {
     }
 
     if (mocked) {
-      delete storage.files[path];
-      callback(null);
+      unlinkMock(path, callback);
       return;
     }
 
@@ -524,4 +523,16 @@ module.exports = new (function() {
       callback(this.error);
     };
   };
+
+  function unlinkMock(path, callback)
+  {
+    var storage = getStorageForPath(path);
+    if (!storage) {
+      callback(new Error('Unable to find entry point for ' + path + '.'));
+      return;
+    }
+
+    delete storage.files[path];
+    callback(null);
+  }
 })();
